@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema({
     course: { type: String, required: true, unique: true },
     altcourse: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: true },
+    nationality: { type: String, required: true },
+    agent: { type: String, required: true },
+    stream: { type: String, required: true },
+
     // Other user fields...
   });
   

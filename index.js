@@ -128,13 +128,13 @@ app.post("/login", async (req, res) => {
  
  //displaying the product on frontend
  app.get("/universities",async(req,res)=>{
-     const data = await PlaceModel.find({})
+     const data = await UniversityModel.find({})
      res.send(JSON.stringify(data))
  })
 
  
 
- //----------------------------------------------booking schema-------------------------------------------------
+ //----------------------------------------------application schema-------------------------------------------------
  const applicationSchema = new mongoose.Schema({
     refference : String,
     phone : String,
@@ -142,14 +142,30 @@ app.post("/login", async (req, res) => {
     stream: String
  })
  const applicationModel = mongoose.model('application',applicationSchema)
- //------------------------------------------------booking api--------------------------------------------------
+ //------------------------------------------------apply api--------------------------------------------------
  app.post("/application",async(req,res)=>{
   console.log(req.body)
   const data = await applicationModel(req.body)
     const datasave = await data.save()
      res.send({message : "Application was successful"})
  })
- //--------------------------------------------displaying the product on frontend------------------------------
+
+//----------------------------------------------Job application schema-------------------------------------------------
+const applySchema = new mongoose.Schema({
+  email : String,
+  phone : String,
+  name : String,
+})
+const applyModel = mongoose.model('apply',applySchema)
+//------------------------------------------------apply api--------------------------------------------------
+app.post("/apply",async(req,res)=>{
+console.log(req.body)
+const data = await applyModel(req.body)
+  const datasave = await data.save()
+   res.send({message : "Job Application was successful"})
+})
+
+ //--------------------------------------------displaying the schools on frontend------------------------------
  app.get("/university",async(req,res)=>{
     const data = await applicationModel.find({})
     res.send(JSON.stringify(data))

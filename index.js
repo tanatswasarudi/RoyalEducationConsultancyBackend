@@ -20,74 +20,58 @@ const PORT = process.env.PORT || 5000
 app.get("/",(req,res)=>{
     res.send("Server is running")
 }) 
-const userSchema = new mongoose.Schema({
-  name: {type : String, required: true, unique:true},
-  email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
-  phone:  { type: String, required: true, unique: true },
-  Gnumber:  { type: String, required: true, unique: true },
-  guardian:  { type: String, required: true},
-  password:  { type: String, required: true },
-  degree:  { type: String, required: true},
-  course:  { type: String, required: true  },
-  altcourse:  { type: String, required: true },
-  agent:  { type: String, required: true },
-  nationality: { type: String, required: true},
-  stream:  { type: String, required: true},
-});
+const userSchema = mongoose.Schema({
+  name: String,
+  email: String,
+  phone: String,
+  Gnumber: String,
+  guardian: String,
+  password: String,
+  degree: String,
+  course: String,
+  altcourse: String,
+  agent: String,
+  nationality: String,
+  stream: String,
+})
 userSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.passwordHash);
 };
 const plaintextPassword = 'password123';
 const hashedPassword = '$2b$10$S5i9BhZNMw5q4YXK7I2hbejiU4o/1l0h3pAJ3FVcz/8GOELgCQf7W';
+
 bcrypt.compare(plaintextPassword, hashedPassword, (err, result) => {
-  if (err) {
-    // Handle the error
-    console.error(err);
+if (err) {
+  console.error(err);
+} else {
+  if (result) {
+    console.log('Password matches');
   } else {
-    // result will be true if the plaintext password matches the hashed password
-    if (result) {
-      console.log('Password matches');
-    } else {
-      console.log('Password does not match');
-    }
+    console.log('Password does not match');
   }
+}
 });
-const userModel = mongoose.model('User', userSchema);
+const userModel = mongoose.model("user",userSchema)
 module.exports = userModel;
-//mongo db connection
-console.log(process.env.MONGODB_URL)
-mongoose.set('strictQuery', false);
-mongoose.connect(process.env.MONGODB_URL)
-.then(()=>console.log("Connected to Database"))
-.catch((err)=>console.log(err))
+
 //register api
-app.post('/register', async (req, res) => {
-  const { email, password ,name} = req.body;
-  
-  try {
-    const existingUser = await userModel.findOne({ email,name });
-    if (existingUser) {
-      return res
-  .header('Content-Type', 'application/json')
-  .send({ message: 'Email already registered', alert: false });
-
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = new userModel({ email,name, passwordHash });
-    await newUser.save();
-    return res
-  .header('Content-Type', 'application/json')
-  .send({ message: 'Registration is Successful', alert: true });
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500)
-    .header('Content-Type', 'application/json')
-    .send({ message: 'Internal server error', alert: false });
-  }
-});
+app.post("/register",(req,res)=>{
+  console.log(req.body)
+  const {email} = req.body
+  userModel.findOne({email : email},(err,result)=>
+  {
+      console.log(result)
+      console.log(err)
+      if(result){
+          res.send({message: "Email already registered",alert : false})
+      }
+      else{
+          const data = userModel(req.body)
+          const save = data.save()
+          res.send({message: "Registration is Successful",alert : true})
+      }
+  })
+})
 
 // Login api
 app.post("/login", async (req, res) => {

@@ -68,16 +68,24 @@ app.post('/register', async (req, res) => {
   try {
     const existingUser = await userModel.findOne({ email,name });
     if (existingUser) {
-      return res.send({ message: 'Email already registered', alert: false });
+      return res
+  .header('Content-Type', 'application/json')
+  .send({ message: 'Email already registered', alert: false });
+
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = new userModel({ email,name, passwordHash });
     await newUser.save();
-    return res.send({ message: 'Registration is Successful', alert: true });
+    return res
+  .header('Content-Type', 'application/json')
+  .send({ message: 'Registration is Successful', alert: true });
+
   } catch (error) {
     console.error(error);
-    return res.status(500).send({ message: 'Internal server error', alert: false });
+    return res.status(500)
+    .header('Content-Type', 'application/json')
+    .send({ message: 'Internal server error', alert: false });
   }
 });
 

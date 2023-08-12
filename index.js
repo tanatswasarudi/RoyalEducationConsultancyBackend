@@ -9,30 +9,34 @@ const app = express()
 app.use(cors())
 app.use(express.json({limit : "10mb"}))
 
+//mongo db connection
+console.log(process.env.MONGODB_URL)
+mongoose.set('strictQuery', false);
+mongoose.connect(process.env.MONGODB_URL)
+.then(()=>console.log("Connected to Database"))
+.catch((err)=>console.log(err))
+
 const PORT = process.env.PORT || 5000 
 app.get("/",(req,res)=>{
     res.send("Server is running")
 })
-//schema
+//user schema
 const userSchema = new mongoose.Schema({
-    name: {type : String, required: true, unique:true},
-    email: { type: String, required: true, unique: true },
-    name: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    phone: { type: String, required: true, unique: true },
-    Gnumber:{ type: String, required: true, unique: true },
-    guardian: { type: String, required: true, unique: true },
-    password: { type: String, required: true, unique: true },
-    degree: { type: String, required: true, unique: true },
-    course: { type: String, required: true, unique: true },
-    altcourse: { type: String, required: true, unique: true },
-    passwordHash: { type: String, required: true },
-    nationality: { type: String, required: true },
-    agent: { type: String, required: true },
-    stream: { type: String, required: true },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true, unique: true },
+  Gnumber: { type: String, required: true, unique: true },
+  guardian: { type: String, required: true },
+  password: { type: String, required: true },
+  degree: { type: String, required: true },
+  course: { type: String, required: true },
+  altcourse: { type: String, required: true },
+  passwordHash: { type: String, required: true },
+  nationality: { type: String, required: true },
+  agent: { type: String, required: true },
+  stream: { type: String, required: true },
+});
 
-    // Other user fields...
-  });
   
   userSchema.methods.comparePassword = function (password) {
     return bcrypt.compare(password, this.passwordHash);
@@ -57,12 +61,7 @@ bcrypt.compare(plaintextPassword, hashedPassword, (err, result) => {
 const userModel = mongoose.model('User', userSchema);
 module.exports = userModel;
 
-//mongo db connection
-console.log(process.env.MONGODB_URL)
-mongoose.set('strictQuery', false);
-mongoose.connect(process.env.MONGODB_URL)
-.then(()=>console.log("Connected to Database"))
-.catch((err)=>console.log(err))
+
 
 //register api
 app.post('/register', async (req, res) => {

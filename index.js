@@ -55,23 +55,25 @@ const userModel = mongoose.model("user",userSchema)
 module.exports = userModel;
 
 //register api
-app.post("/register",(req,res)=>{
-  console.log(req.body)
-  const {email} = req.body
-  userModel.findOne({email : email},(err,result)=>
-  {
-      console.log(result)
-      console.log(err)
-      if(result){
-          res.send({message: "Email already registered",alert : false})
-      }
-      else{
-          const data = userModel(req.body)
-          const save = data.save()
-          res.send({message: "Registration is Successful",alert : true})
-      }
-  })
-})
+app.post('/register', async (req, res) => {
+  const { email, password, name } = req.body;
+
+  try {
+    const existingUser = await userModel.findOne({ email, name });
+    if (existingUser) {
+      return res.send({ message: 'Email already registered', alert: false });
+    }
+
+    const newUser = new userModel({ email, name, password });
+    await newUser.save();
+    return res.send({ message: 'Registration is Successful', alert: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ message: 'Internal server error', alert: false });
+  }
+});
+
+
 
 // Login api
 app.post("/login", async (req, res) => {

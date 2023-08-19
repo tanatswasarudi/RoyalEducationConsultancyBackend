@@ -26,32 +26,26 @@ const userSchema = mongoose.Schema({
   phone: String,
   Gnumber: String,
   guardian: String,
-  password: String,
+  passwordHash: String, // Store the hashed password here
   degree: String,
   course: String,
   altcourse: String,
   agent: String,
   nationality: String,
   stream: String,
-})
-userSchema.methods.comparePassword = function (password) {
-  return bcrypt.compare(password, this.passwordHash);
-};
-const plaintextPassword = 'password123';
-const hashedPassword = '$2b$10$S5i9BhZNMw5q4YXK7I2hbejiU4o/1l0h3pAJ3FVcz/8GOELgCQf7W';
-
-bcrypt.compare(plaintextPassword, hashedPassword, (err, result) => {
-if (err) {
-  console.error(err);
-} else {
-  if (result) {
-    console.log('Password matches');
-  } else {
-    console.log('Password does not match');
-  }
-}
 });
-const userModel = mongoose.model("user",userSchema)
+userSchema.pre('save', async function (next) {
+  if (this.isModified('passwordHash')) {
+    try {
+      const saltRounds = 10;
+      this.passwordHash = await bcrypt.hash(this.passwordHash, saltRounds);
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
+});
+const userModel = mongoose.model("User",userSchema)
 module.exports = userModel;
 
 //register api
@@ -59,12 +53,13 @@ app.post('/register', async (req, res) => {
   const { email, password, name } = req.body;
 
   try {
-    const existingUser = await userModel.findOne({ email, name });
+    const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.send({ message: 'Email already registered', alert: false });
     }
 
-    const newUser = new userModel({ email, name, password });
+    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+    const newUser = new userModel({ email, name, passwordHash: hashedPassword });
     await newUser.save();
     return res.send({ message: 'Registration is Successful', alert: true });
   } catch (error) {
@@ -72,13 +67,13 @@ app.post('/register', async (req, res) => {
     return res.status(500).send({ message: 'Internal server error', alert: false });
   }
 });
-
 // Login api
-app.post("/login", async (req, res) => {
-  console.log(req.body);
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
   try {
-    const user = await userModel.findOne({ email: email }).exec();
+    const user = await userModel.findOne({ email }).exec();
+
     if (user) {
       const passwordMatch = await bcrypt.compare(password, user.passwordHash);
       if (passwordMatch) {
@@ -86,18 +81,19 @@ app.post("/login", async (req, res) => {
           name: user.name,
           email: user.email,
         };
-        res.status(200).send({ message: "Login is Successful", alert: true, data: dataSend });
+        res.send({ message: 'Login is Successful', alert: true, data: dataSend });
       } else {
-        res.status(500).send({ message: "Invalid email or password", alert: false });
+        res.send({ message: 'Invalid email or password', alert: false });
       }
     } else {
-      res.send({ message: "Email is not Registered, Please SignUp", alert: false });
+      res.send({ message: 'Email is not Registered, Please SignUp', alert: false });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: "Internal server error", alert: false });
+    res.status(500).send({ message: 'Internal server error', alert: false });
   }
 });
+
 const schemaProduct = mongoose.Schema({
   title : String,
   address : String,

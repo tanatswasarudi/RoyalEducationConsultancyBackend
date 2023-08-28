@@ -50,7 +50,7 @@ module.exports = userModel;
 
 //register api
 app.post('/register', async (req, res) => {
-  const { name, email,phone,guardian,Gnumber, course,degree,altcourse ,agent, nationality,stream  } = req.body;
+  const { password, email } = req.body;
 
   try {
     const existingUser = await userModel.findOne({ email });
@@ -59,7 +59,7 @@ app.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
-    const newUser = new userModel({ name, email,phone,guardian,Gnumber, password, course,degree,altcourse ,agent, nationality,stream, passwordHash: hashedPassword });
+    const newUser = new userModel({  email, passwordHash: hashedPassword });
     await newUser.save();
     return res.send({ message: 'Registration is Successful', alert: true });
   } catch (error) {

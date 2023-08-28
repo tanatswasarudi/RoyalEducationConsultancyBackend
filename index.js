@@ -22,7 +22,10 @@ app.get("/",(req,res)=>{
 }) 
 const userSchema = mongoose.Schema({
   name: String,
-  email: String,
+  email: {
+    type: String,
+    unique: true,
+},
   phone: String,
   Gnumber: String,
   guardian: String,
@@ -45,12 +48,12 @@ userSchema.pre('save', async function (next) {
   }
   next();
 });
-const userModel = mongoose.model("User",userSchema)
+const userModel = mongoose.model("user",userSchema)
 module.exports = userModel;
 
 //register api
 app.post('/register', async (req, res) => {
-  const { password, email } = req.body;
+  const {name, email,phone,guardian,Gnumber, password, course,degree,altcourse ,agent, nationality,stream} = req.body;
 
   try {
     const existingUser = await userModel.findOne({ email });
@@ -59,7 +62,7 @@ app.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
-    const newUser = new userModel({  email, passwordHash: hashedPassword });
+    const newUser = new userModel({   name, email,phone,guardian,Gnumber, course,degree,altcourse ,agent, nationality,stream, passwordHash: hashedPassword });
     await newUser.save();
     return res.send({ message: 'Registration is Successful', alert: true });
   } catch (error) {

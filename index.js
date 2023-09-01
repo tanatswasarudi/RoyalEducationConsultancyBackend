@@ -9,13 +9,6 @@ const app = express()
 app.use(cors())
 app.use(express.json({limit : "10mb"}))
 
-//mongo db connection
-console.log(process.env.MONGODB_URL)
-mongoose.set('strictQuery', false);
-mongoose.connect(process.env.MONGODB_URL)
-.then(()=>console.log("Connected to Database"))
-.catch((err)=>console.log(err))
-
 const PORT = process.env.PORT || 5000 
 app.get("/",(req,res)=>{
     res.send("Server is running")
@@ -37,32 +30,48 @@ const userSchema = mongoose.Schema({
   nationality: String,
   stream: String,
 });
-userSchema.pre('save', async function (next) {
-  if (this.isModified('passwordHash')) {
-    try {
-      const saltRounds = 10;
-      this.passwordHash = await bcrypt.hash(this.passwordHash, saltRounds);
-    } catch (error) {
-      return next(error);
-    }
+userSchema.methods.comparePassword = function (password) {
+  return bcrypt.compare(password, this.passwordHash);
+};
+const plaintextPassword = 'password123';
+const hashedPassword = '$2b$10$S5i9BhZNMw5q4YXK7I2hbejiU4o/1l0h3pAJ3FVcz/8GOELgCQf7W';
+
+bcrypt.compare(plaintextPassword, hashedPassword, (err, result) => {
+if (err) {
+  // Handle the error
+  console.error(err);
+} else {
+  // result will be true if the plaintext password matches the hashed password
+  if (result) {
+    console.log('Password matches');
+  } else {
+    console.log('Password does not match');
   }
-  next();
+}
 });
-const userModel = mongoose.model("user",userSchema)
+//
+const userModel = mongoose.model('User', userSchema);
 module.exports = userModel;
+
+//mongo db connection
+console.log(process.env.MONGODB_URL)
+mongoose.set('strictQuery', false);
+mongoose.connect(process.env.MONGODB_URL)
+.then(()=>console.log("Connected to Database"))
+.catch((err)=>console.log(err))
 
 //register api
 app.post('/register', async (req, res) => {
-  const {name, email,phone,guardian,Gnumber, password, course,degree,altcourse ,agent, nationality,stream} = req.body;
-
+  const { name, email,phone,guardian,Gnumber, password, course,degree,altcourse ,agent, nationality,stream} = req.body;
+  
   try {
-    const existingUser = await userModel.findOne({ email });
+    const existingUser = await userModel.findOne({ email,name });
     if (existingUser) {
       return res.send({ message: 'Email already registered', alert: false });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
-    const newUser = new userModel({   name, email,phone,guardian,Gnumber, course,degree,altcourse ,agent, nationality,stream, passwordHash: hashedPassword });
+    const passwordHash = await bcrypt.hash(password, 10);
+    const newUser = new userModel({ name, email,phone,guardian,Gnumber, password, course,degree,altcourse ,agent, nationality,stream, passwordHash });
     await newUser.save();
     return res.send({ message: 'Registration is Successful', alert: true });
   } catch (error) {
@@ -71,29 +80,34 @@ app.post('/register', async (req, res) => {
   }
 });
 // Login api
-app.post('/login', async (req, res) => {
+app.post("/login", async (req, res) => {
+  console.log(req.body);
   const { email, password } = req.body;
-
   try {
-    const user = await userModel.findOne({ email }).exec();
-
+    const user = await userModel.findOne({ email: email }).exec();
     if (user) {
       const passwordMatch = await bcrypt.compare(password, user.passwordHash);
       if (passwordMatch) {
         const dataSend = {
-          name: user.name,
-          email: user.email,
+        name :  user.name,
+        email : user.email,
+        phone: user.phone,
+        Gnumber: user.Gnumber,
+        guardian: user.guardian,
+        degree: user.degree,
+        agent: user.agent,
+        nationality: user.nationality,
         };
-        res.send({ message: 'Login is Successful', alert: true, data: dataSend });
+        res.status(200).send({ message: "Login is Successful", alert: true, data: dataSend });
       } else {
-        res.send({ message: 'Invalid email or password', alert: false });
+        res.status(500).send({ message: "Invalid email or password", alert: false });
       }
     } else {
-      res.send({ message: 'Email is not Registered, Please SignUp', alert: false });
+      res.send({ message: "Email is not Registered, Please SignUp", alert: false });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: 'Internal server error', alert: false });
+    res.status(500).send({ message: "Internal server error", alert: false });
   }
 });
 
